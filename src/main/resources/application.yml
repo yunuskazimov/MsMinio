@@ -23,5 +23,12 @@ minio:
 
 file:
   upload:
-    acceptableVideoExtensions: mp4,mov,avi,wmv
-    acceptableImageExtensions: jpg,png,jpeg,pdf
+    acceptableFileExtensions: pdf
+    acceptableImageExtensions: jpg,png,jpeg
+server:
+  port: 8052
+
+client:
+  users:
+    int:
+      url: http://localhost:8051/int/users/id/
