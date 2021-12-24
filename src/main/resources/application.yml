@@ -2,4 +2,26 @@ spring:
   datasource:
     password: xazar1
     username: xazar1
-    url: jdbc:postgresql://localhost:5400/users
+    url: jdbc:postgresql://localhost:5400/minio_users
+  jpa:
+    hibernate:
+      ddl-auto: create
+    generate-ddl: true
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2KB
+      max-file-size: 5MB
+      max-request-size: 10MB
+minio:
+  url: http://localhost:9000
+  bucket: userserver
+  access-key: minioo
+  secret-key: minio1234
+  image-folder: profpic/
+  video-folder: video/
+
+file:
+  upload:
+    acceptableVideoExtensions: mp4,mov,avi,wmv
+    acceptableImageExtensions: jpg,png,jpeg,pdf
