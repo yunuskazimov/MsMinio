@@ -43,6 +43,8 @@ dependencies {
     annotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: '1.4.2.Final'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
+   // implementation("org.springframework.cloud:spring-cloud-starter-openfeign:2.2.10.RELEASE")
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
