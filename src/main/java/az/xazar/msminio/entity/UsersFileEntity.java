@@ -17,5 +17,6 @@ public class UsersFileEntity {
     private Long id;
     private Long userId;
     private String fileName;
+    private String requestTypeName;
 
 }
