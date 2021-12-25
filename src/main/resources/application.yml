@@ -15,16 +15,16 @@ spring:
       max-request-size: 10MB
 minio:
   url: http://localhost:9000
-  bucket: userserver
+  bucket: file-server-xazar
   access-key: minioo
-  secret-key: minio1234
+  secret-key: minioo1234
   image-folder: profpic/
   video-folder: video/
 
 file:
   upload:
     acceptableFileExtensions: pdf
-    acceptableImageExtensions: jpg,png,jpeg
+    acceptableImageExtensions: jpg,png,jpeg,pdf
 server:
   port: 8052
 
