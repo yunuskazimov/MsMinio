@@ -7,11 +7,11 @@ public interface FileService {
 
     UserDto findById(Long id);
 
-    String uploadUserImage(MultipartFile file, Long id);
+    String uploadImageForUser(MultipartFile file, Long id, String type);
 
     String updateUserImage(MultipartFile file, Long id);
 
-    void deleteUserImage(Long id);
+    void deleteUserImage(Long id,String fileName);
 
     String uploadUserFile(MultipartFile file, Long id);
 

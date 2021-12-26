@@ -13,8 +13,8 @@ import java.util.Date;
 public class IntFileUtil {
 
 
-//    @Value("${file.upload.acceptableVideoExtensions}")
-//    private String[] acceptableVideoExtensions;
+    @Value("${file.upload.acceptableFileExtensions}")
+    private String[] acceptableFileExtensions;
     @Value("${file.upload.acceptableImageExtensions}")
     private String[] acceptableImageExtensions;
 
@@ -25,12 +25,12 @@ public class IntFileUtil {
                     return true;
                 }
             }
-//        }else if (mediaType.equals("video")){
-//            for (String s : acceptableVideoExtensions) {
-//                if (s.equalsIgnoreCase(extension)) {
-//                    return true;
-//                }
-//            }
+        }else if (mediaType.equals("file")){
+            for (String s : acceptableFileExtensions) {
+                if (s.equalsIgnoreCase(extension)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -42,6 +42,11 @@ public class IntFileUtil {
         } else {
             throw new ExtensionNotAcceptableException(extension);
         }
+    }
+
+    public String generateUniqueName(Long id, String extension) {
+        Date date = new Date();
+        return id+"i"+date.getTime() + "." + extension;
     }
 
     public String generateUniqueName(String extension) {

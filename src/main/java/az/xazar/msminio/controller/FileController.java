@@ -3,6 +3,7 @@ package az.xazar.msminio.controller;
 import az.xazar.msminio.model.clinet.UserDto;
 import az.xazar.msminio.service.FileService;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,14 +13,15 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/file")
+@Slf4j
 public class FileController {
 
     private final FileService fileService;
 
     @Value("${minio.image-folder}")
     private String imageFolder;
-    @Value("${minio.video-folder}")
-    private String videoFolder;
+    @Value("${minio.file-folder}")
+    private String fileFolder;
 
     public FileController(FileService fileService) {
         this.fileService = fileService;
@@ -28,7 +30,7 @@ public class FileController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Get User by Id")
-    public ResponseEntity<UserDto> getById(@PathVariable("id") Long id){
+    public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
         return ResponseEntity.status(200).body(fileService.findById(id));
     }
 
@@ -54,25 +56,28 @@ public class FileController {
     @PostMapping("/image/{id}")
     @ApiOperation(value = "Add User File")
     public ResponseEntity<String> createImage(@PathVariable("id") Long id,
-                                              @Valid @RequestParam MultipartFile file){
-        return ResponseEntity.status(200).body(fileService.uploadUserImage(file,id));
+                                              @Valid @RequestParam MultipartFile file,
+                                              String requestType) {
+        return ResponseEntity.status(200).body(fileService.uploadImageForUser(file, id, requestType));
     }
 
     @PutMapping("/image/{id}")
     @ApiOperation(value = "Update User File")
-    public ResponseEntity<String> updateImage(@PathVariable("id")Long id,
-                                              @Valid @RequestParam MultipartFile multipartFile){
-        return ResponseEntity.status(200).body(fileService.updateUserImage(multipartFile,id));
+    public ResponseEntity<String> updateImage(@PathVariable("id") Long id,
+                                              @Valid @RequestParam MultipartFile multipartFile) {
+        return ResponseEntity.status(200).body(fileService.updateUserImage(multipartFile, id));
     }
 
     @GetMapping("/image/{fileName}")
     @ApiOperation(value = "Get User photo")
-    public byte [] getImage(@PathVariable("fileName") String fileName){
-        return fileService.getFile(fileName,imageFolder);
+    public byte[] getImage(@PathVariable("fileName") String fileName) {
+        return fileService.getFile(fileName, imageFolder);
     }
 
     @DeleteMapping("/image/{id}")
-    public void deleteUserFile(@PathVariable Long id){
-        fileService.deleteUserImage(id);
+    public void deleteUserFile(@PathVariable Long id,
+                               @RequestParam String fileName) {
+        fileService.deleteUserImage(id, fileName);
     }
+
 }
