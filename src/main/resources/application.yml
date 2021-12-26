@@ -19,12 +19,12 @@ minio:
   access-key: minioo
   secret-key: minioo1234
   image-folder: profpic/
-  video-folder: video/
+  file-folder: file/
 
 file:
   upload:
     acceptableFileExtensions: pdf
-    acceptableImageExtensions: jpg,png,jpeg,pdf
+    acceptableImageExtensions: jpg,png,jpeg
 server:
   port: 8052
 
