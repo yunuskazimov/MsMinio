@@ -4,6 +4,7 @@ import az.xazar.msminio.clinet.UserClientRest;
 import az.xazar.msminio.entity.UsersFileEntity;
 import az.xazar.msminio.model.MinioFileDto;
 import az.xazar.msminio.model.error.EntityNotFoundException;
+import az.xazar.msminio.model.error.FileCantUpdateException;
 import az.xazar.msminio.model.error.FileCantUploadException;
 import az.xazar.msminio.model.error.FileNotFoundException;
 import az.xazar.msminio.repository.UserFileRepository;
@@ -96,32 +97,34 @@ public class MinioServiceIntImpl implements MinioServiceInt {
                 kv("partnerId", userId));
 
         userClient.getById(userId);
-
-        MinioFileDto minioFileDto = minioService.uploadFile(MinioFileDto.builder()
-                .file(file)
-                .build(), userId, fileFolder);
-
-        String fileName = minioFileDto.getFilename();
-        String fileUrl = minioFileDto.getUrl();
-
         UsersFileEntity entity = userRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity Not Found"));
+        if (!entity.isDeleted()){
+            MinioFileDto minioFileDto = minioService.uploadFile(MinioFileDto.builder()
+                    .file(file)
+                    .build(), userId, fileFolder);
 
-        try {
-            userRepository.save(UsersFileEntity.builder()
-                    .id(entity.getId())
-                    .userId(userId)
-                    .fileUrl(fileUrl)
-                    .requestTypeName(type)
-                    .fileName(fileName)
-                    .isDeleted(false)
-                    .build());
+            String fileName = minioFileDto.getFilename();
+            String fileUrl = minioFileDto.getUrl();
 
-            return fileName;
-        } catch (FileCantUploadException e) {
-            throw new FileCantUploadException(file.getOriginalFilename());
+            try {
+
+                userRepository.save(UsersFileEntity.builder()
+                        .id(entity.getId())
+                        .userId(userId)
+                        .fileUrl(fileUrl)
+                        .requestTypeName(type)
+                        .fileName(fileName)
+                        .isDeleted(false)
+                        .build());
+
+                return fileName;
+            } catch (FileCantUploadException e) {
+                throw new FileCantUpdateException(file.getOriginalFilename());
+            }
         }
+        throw new FileCantUpdateException(file.getOriginalFilename());
     }
 
     @Transactional
