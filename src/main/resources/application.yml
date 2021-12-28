@@ -5,7 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5400/minio_users
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     generate-ddl: true
   servlet:
     multipart:
@@ -18,15 +18,21 @@ minio:
   bucket: file-server-xazar
   access-key: minioo
   secret-key: minioo1234
-  image-folder: profpic/
-  file-folder: file/
+  image-folder: profPicFolder/
+  file-folder: fileFolder/
 
 file:
   upload:
-    acceptableFileExtensions: pdf
+    acceptableFileExtensions: pdf,jpg,png,jpeg
     acceptableImageExtensions: jpg,png,jpeg
+
+
 server:
   port: 8052
+  address: 0.0.0.0
+
+  secure: http
+
 
 client:
   users:

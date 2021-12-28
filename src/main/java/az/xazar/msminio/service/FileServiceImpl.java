@@ -194,7 +194,7 @@ public class FileServiceImpl implements FileService {
     @SneakyThrows
     public String uploadImage(MultipartFile file, String folder) {
         String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
-        String fileName = intFileUtil.generateUniqueName(fileExtension);
+        String fileName = intFileUtil.generateUniqueNameForImage(fileExtension);
         String objectName = folder + fileName;
 
         BufferedImage image = ImageIO.read(file.getInputStream());
@@ -241,7 +241,7 @@ public class FileServiceImpl implements FileService {
     public String uploadVideo(MultipartFile file, String folder) {
         String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file,
                 VIDEO_MEDIA_TYPE);
-        String fileName = intFileUtil.generateUniqueName(fileExtension);
+        String fileName = intFileUtil.generateUniqueNameForImage(fileExtension);
 
         String objectName = folder + fileName;
 

@@ -13,6 +13,7 @@ public class MinioConfig {
     private String secretKey;
     @Value("${minio.url}")
     private String url;
+
     @Bean
     public MinioClient minioClient(){
         return MinioClient.builder()

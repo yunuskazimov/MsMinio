@@ -22,6 +22,9 @@ public class UsersFileEntity {
     private Long userId;
     private String fileName;
     private String requestTypeName;
+    private String fileUrl;
+
+    private boolean isDeleted;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

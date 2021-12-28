@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Service
 public class IntFileUtil {
@@ -44,13 +44,15 @@ public class IntFileUtil {
         }
     }
 
-    public String generateUniqueName(Long id, String extension) {
-        Date date = new Date();
-        return id+"i"+date.getTime() + "." + extension;
+    public String generateUniqueNameForFile(Long id) {
+        return id + "ii" + LocalDateTime.now() + "-";
     }
 
-    public String generateUniqueName(String extension) {
-        Date date = new Date();
-        return date.getTime() + "." + extension;
+    public String generateUniqueName(Long id, String extension) {
+        return id + "ii" + LocalDateTime.now() + "." + extension;
+    }
+
+    public String generateUniqueNameForImage(String extension) {
+        return LocalDateTime.now() + "." + extension;
     }
 }

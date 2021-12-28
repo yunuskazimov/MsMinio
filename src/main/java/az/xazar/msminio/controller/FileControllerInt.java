@@ -26,6 +26,7 @@ public class FileControllerInt {
         this.fileService = fileService;
     }
 
+
     @PostMapping("/image/{id}")
     @ApiOperation(value = "Internal: Add User image")
     public ResponseEntity<String> createImageInt(@PathVariable("id") Long id,
