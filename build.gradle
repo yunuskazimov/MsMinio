@@ -49,12 +49,7 @@ dependencies {
     implementation group: 'org.mapstruct', name: 'mapstruct', version: '1.4.2.Final'
     annotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: '1.4.2.Final'
 
-    //annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:3.1.0")
-    implementation("io.github.openfeign:feign-httpclient:11.7")
-    implementation("io.github.openfeign:feign-okhttp:11.7")
-
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
