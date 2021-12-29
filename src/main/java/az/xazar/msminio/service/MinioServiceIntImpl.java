@@ -3,10 +3,7 @@ package az.xazar.msminio.service;
 import az.xazar.msminio.clinet.UserClientRest;
 import az.xazar.msminio.entity.UsersFileEntity;
 import az.xazar.msminio.model.MinioFileDto;
-import az.xazar.msminio.model.error.EntityNotFoundException;
-import az.xazar.msminio.model.error.FileCantUpdateException;
-import az.xazar.msminio.model.error.FileCantUploadException;
-import az.xazar.msminio.model.error.FileNotFoundException;
+import az.xazar.msminio.model.error.*;
 import az.xazar.msminio.repository.UserFileRepository;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.MinioClient;
@@ -33,11 +30,14 @@ import static org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTE
 public class MinioServiceIntImpl implements MinioServiceInt {
     private final UserClientRest userClient;
     private final UserFileRepository userRepository;
+
     private final MinioService minioService;
     private final MinioClient minioClient;
     private final IntFileUtil intFileUtil;
+
     private final String FILE_MEDIA_TYPE = "file";
     private final String IMAGE_MEDIA_TYPE = "image";
+
     @Value("${minio.image-folder}")
     private String imageFolder;
     @Value("${minio.file-folder}")
@@ -92,6 +92,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
 
     }
 
+    @Transactional
     public String updateFileForUser(Long id, Long userId, MultipartFile file, String type) {
         log.info("updateFile to User started with, {}",
                 kv("partnerId", userId));
@@ -100,7 +101,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
         UsersFileEntity entity = userRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity Not Found"));
-        if (!entity.isDeleted()){
+        if (!entity.isDeleted()) {
             MinioFileDto minioFileDto = minioService.uploadFile(MinioFileDto.builder()
                     .file(file)
                     .build(), userId, fileFolder);
@@ -116,7 +117,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
                         .fileUrl(fileUrl)
                         .requestTypeName(type)
                         .fileName(fileName)
-                        .isDeleted(false)
+                        //  .isDeleted(false)
                         .build());
 
                 return fileName;
@@ -137,8 +138,9 @@ public class MinioServiceIntImpl implements MinioServiceInt {
         Long id = Long.valueOf(fileName.split("[/]")[1].split("[i][i]")[0]);
 
         log.info("getFile started with {}", kv("fileName", fileName + ",userId: " + id));
-        userRepository.findAllByUserIdAndFileName(id, fileName)
-                .orElseThrow(() -> new FileNotFoundException(" "));
+        userRepository.findAllByUserIdAndFileName(id, fileName).
+                filter(entity -> !entity.isDeleted())
+                .orElseThrow(() -> new FileNotFoundException(ErrorCodes.NOT_FOUND));
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -153,6 +155,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
         log.info("deleteUserImage started from User with {}", kv("id", id));
 
         UsersFileEntity usersFileEntity = userRepository.findById(id)
+                .filter(e -> !e.isDeleted())
                 .orElseThrow(() ->
                         new EntityNotFoundException(UsersFileEntity.class, id));
 
@@ -191,7 +194,6 @@ public class MinioServiceIntImpl implements MinioServiceInt {
                 kv("fileName", fileName));
 
     }
-
 
 //    public String getFileUrl(Long id, String fileName) {
 //
