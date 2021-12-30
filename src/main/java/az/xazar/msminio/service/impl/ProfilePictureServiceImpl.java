@@ -1,12 +1,12 @@
-package az.xazar.msminio.service;
+package az.xazar.msminio.service.impl;
 
 import az.xazar.msminio.clinet.UserClientRest;
 import az.xazar.msminio.entity.ProfilePictureEntity;
-import az.xazar.msminio.entity.UsersFileEntity;
 import az.xazar.msminio.model.error.EntityNotFoundException;
 import az.xazar.msminio.model.error.FileCantUpdateException;
 import az.xazar.msminio.model.error.FileCantUploadException;
 import az.xazar.msminio.repository.ProfilePictureRepository;
+import az.xazar.msminio.service.ProfilePictureService;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
@@ -26,7 +26,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -34,26 +33,23 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @Service
 @Slf4j
 public class ProfilePictureServiceImpl implements ProfilePictureService {
+
     private final UserClientRest userClient;
     private final ProfilePictureRepository pictureRepo;
-
     private final MinioClient minioClient;
     private final IntFileUtil intFileUtil;
 
-    @Value("${minio.image-folder}")
-    private String imageFolder;
-    @Value("${minio.bucket}")
-    private String bucketName;
-
     private final String IMAGE_MEDIA_TYPE = "image";
-
     @Value("${server.address}")
-    String msAdress;
+    String msAddress;
     @Value("${server.port}")
     String msPort;
     @Value("${server.secure}")
     String msSecure;
-
+    @Value("${minio.image-folder}")
+    private String imageFolder;
+    @Value("${minio.bucket}")
+    private String bucketName;
 
     public ProfilePictureServiceImpl(UserClientRest userClient,
                                      ProfilePictureRepository pictureRepo,
@@ -65,98 +61,135 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         this.intFileUtil = intFileUtil;
     }
 
-
     @Override
     @Transactional
     public String uploadImageForProfile(MultipartFile file, Long userId, String type) {
-        log.info("uploadImage to Profile started with, {}",
-                kv("partnerId", userId));
+        log.info("uploadImage to Profile started with, {}", kv("partnerId", userId));
 
-        String imageName = uploadImage(file, imageFolder);
-        String imageUrl = getPreSignedUrl(imageName);
+        var ref = new Object() {
+            String img = null;
+        };
 
-        userClient.getById(userId);
+        pictureRepo.findByUserId(userId).ifPresentOrElse(entity -> {
 
-        try {
-            pictureRepo.save(ProfilePictureEntity.builder()
-                    .userId(userId)
-                    .imageName(imageName)
-                    .requestTypeName(type)
-                    .imageUrl(imageUrl)
-                    .originalName(file.getOriginalFilename())
-                    .isDeleted(false)
-                    .build());
+            log.info("uploadImage to Profile is Present and forwarded to Update Image " +
+                            "with, {}",
+                    kv("partnerId", userId));
 
-            return imageName;
-        } catch (FileCantUploadException e) {
-            throw new FileCantUploadException(file.getOriginalFilename());
-        }
+            ref.img = updateImageForProfile(entity.getId(), userId, file, type);
+
+            log.info("uploadImage to Profile was Presented and completed with Update Image " +
+                    "with, {}", kv("partnerId", userId));
+
+        }, () -> {
+
+            log.info("uploadImage to continuous with, {}", kv("partnerId", userId));
+
+            String imageName = uploadImage(userId, file, imageFolder);
+            String imageUrl = getPreSignedUrl(imageName);
+            ref.img = imageName;
+            userClient.getById(userId);
+
+            try {
+                pictureRepo.save(ProfilePictureEntity.builder()
+                        .userId(userId)
+                        .imageName(imageName)
+                        .requestTypeName(type)
+                        .imageUrl(imageUrl)
+                        .originalName(file.getOriginalFilename())
+                        .isDeleted(false)
+                        .build());
+
+                log.info("uploadImage to Profile completed with, {}, {}",
+                        kv("partnerId", userId), kv("ImageN Name: ", imageName));
+
+            } catch (FileCantUploadException e) {
+                throw new FileCantUploadException(file.getOriginalFilename());
+            }
+
+        });
+
+        return ref.img;
+
         //TODO Burda gelen exception u tut. USer not found
         // MAPPER ELAVE ET!!!
-
     }
 
     @Override
-    public String updateUserImage(Long id, Long userId, MultipartFile file, String type) {
-        log.info("updateImage to Profile started with, {}",
-                kv("partnerId", userId));
+    @Transactional
+    public String updateImageForProfile(Long id, Long userId, MultipartFile file, String type) {
+        log.info("updateImage to Profile started with, {}", kv("partnerId", userId));
 
         userClient.getById(userId);
 
-        ProfilePictureEntity entity = pictureRepo.findById(id)
+        pictureRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(ProfilePictureEntity.class, id));
 
-        if (!entity.isDeleted()) {
-            String imageName = entity.getImageName();
 
-            deleteFile(imageName, imageFolder);
+            intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
+            deleteUserImage(id);
 
-            String newImageName = uploadImage(file, imageFolder);
+            String newImageName = uploadImage(userId, file, imageFolder);
             String imageUrl = getPreSignedUrl(newImageName);
 
             try {
                 pictureRepo.save(ProfilePictureEntity.builder()
+                        .id(id)
                         .userId(userId)
                         .imageName(newImageName)
                         .requestTypeName(type)
                         .imageUrl(imageUrl)
                         .originalName(file.getOriginalFilename())
-                       // .isDeleted(false)
+                        .isDeleted(false)
                         .build());
+
+                log.info("updateImage to Profile completed with, {}, {}",
+                        kv("partnerId", userId), kv("fileName", newImageName));
 
                 return newImageName;
             } catch (FileCantUploadException e) {
                 throw new FileCantUploadException(file.getOriginalFilename());
             }
-        }
-        throw new FileCantUpdateException(file.getOriginalFilename());
     }
 
     @Override
-    public void deleteUserImage(Long id,String fileName) {
-        log.info("deleteUserImage started from User with {}",
-                kv("id", id));
+    @Transactional
+    public String deleteUserImage(Long id) {
 
-//        userClient.getById(id);
-//        UsersFileEntity usersFileEntity = userRepository.findAllByUserIdAndFileName(id,fileName)
-//                .orElseThrow(() ->
-//                        new EntityNotFoundException(UsersFileEntity.class, id));
-//
-//        if (usersFileEntity.getFileName() != null) {
-//            deleteFile(usersFileEntity.getFileName(), imageFolder);
-//            usersFileEntity.setFileName(null);
-//            userRepository.save(usersFileEntity);
-//        }
+        log.info("deleteUserImage started from User with {}", kv("id", id));
+
+        ProfilePictureEntity entity = pictureRepo.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(ProfilePictureEntity.class, id));
+
+        userClient.getById(entity.getUserId());
+
+        if (!entity.isDeleted()) {
+            deleteFile(entity.getImageName(), imageFolder);
+            entity.setDeleted(true);
+            pictureRepo.save(entity);
+        } else {
+            log.info("deleteImage already completed. {}",
+                    kv("Deleted Time", entity.getUpdatedAt()));
+            return "Profile Picture Already Deleted. Delete Time: " + entity.getUpdatedAt();
+        }
 
         log.info("deleteUserImage completed successfully from User with {} ", kv("id", id));
 
+        return "Profile Picture Deleted";
+
     }
 
-    @Transactional
+    @SneakyThrows
     public void deleteFile(String fileName, String folder) {
         log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
-        deleteFileS(fileName, folder);
-        log.info("delete Profile Image completed successfully from User with {} ", kv("fileName", fileName));
+        String objectName = folder + fileName;
+        minioClient.removeObject(RemoveObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .build());
+        log.info("delete Profile Image completed successfully from User " +
+                "with {} ", kv("fileName", fileName));
     }
 
     @Transactional
@@ -167,8 +200,8 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     }
 
     @SneakyThrows
-    public byte[] getFileS(String fileName, String folder) {
-        log.info("get Profile Image started with {}", kv("fileName", fileName));
+    private byte[] getFileS(String fileName, String folder) {
+        log.info("get Profile Image continuous with {}", kv("fileName", fileName));
         String objectName = folder + fileName;
         GetObjectArgs minioRequest = GetObjectArgs.builder()
                 .bucket(bucketName)
@@ -180,29 +213,18 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         } catch (ErrorResponseException e) {
             ErrorResponse response = e.errorResponse();
             log.error("Minio error occurred with: {}, {}, {}",
-                    kv("code", response.code()), kv("message",
-                            response.message()),
+                    kv("code", response.code()), kv("message", response.message()),
                     kv("objectName", response.objectName()));
         }
+        log.info("get Profile Image completed with {}", kv("fileName", fileName));
+
         return bytes;
     }
 
-
     @SneakyThrows
-    public void deleteFileS(String fileName, String folder) {
-        log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
-        String objectName = folder + fileName;
-        minioClient.removeObject(RemoveObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .build());
-        log.info("delete Profile Image completed successfully from User with {} ", kv("fileName", fileName));
-    }
-
-    @SneakyThrows
-    public String uploadImage(MultipartFile file, String folder) {
+    private String uploadImage(Long userid, MultipartFile file, String folder) {
         String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
-        String imageName = intFileUtil.generateUniqueNameForImage(fileExtension);
+        String imageName = intFileUtil.generateUniqueNameForImage(userid, fileExtension);
         String objectName = folder + imageName;
 
         BufferedImage image = ImageIO.read(file.getInputStream());
@@ -231,7 +253,7 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
 
     private BufferedImage resizeImage(BufferedImage originalImage,
                                       int targetWidth,
-                                      int targetHeight) throws IOException {
+                                      int targetHeight) {
 
         Image resultingImage = originalImage.getScaledInstance(targetWidth,
                 targetHeight,
@@ -246,7 +268,7 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     }
 
     private String getPreSignedUrl(String filename) {
-        return msSecure + "://" + msAdress + ":" + msPort + "/file/".concat(filename);
+        return msSecure + "://" + msAddress + ":" + msPort + "/file/".concat(filename);
     }
 
 }

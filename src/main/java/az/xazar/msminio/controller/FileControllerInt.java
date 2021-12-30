@@ -31,22 +31,22 @@ public class FileControllerInt {
     public ResponseEntity<String> createImageInt(@PathVariable("id") Long id,
                                                  @Valid @RequestParam MultipartFile file,
                                                  @RequestParam String type) {
-        return ResponseEntity.status(200).body(fileService.uploadImageForUser(file, id,type));
+        return ResponseEntity.status(200).body(fileService.uploadImageForUser(file, id, type));
     }
 
     @PostMapping("/file/{id}")
     @ApiOperation(value = "Internal: Add User File")
     public ResponseEntity<String> createFileInt(@PathVariable("id") Long id,
-                                                 @Valid @RequestParam MultipartFile file,
-                                                 @RequestParam String type) {
-        return ResponseEntity.status(200).body(fileService.uploadFileForUser(file, id,type));
+                                                @Valid @RequestParam MultipartFile file,
+                                                @RequestParam String type) {
+        return ResponseEntity.status(200).body(fileService.uploadFileForUser(file, id, type));
     }
 
     @GetMapping("/image/{id}")
     @ApiOperation(value = "Internal: Get User photo")
     public byte[] getImage(@PathVariable Long id, @RequestParam String fileName) {
 
-        return fileService.getImage(id,fileName, imageFolder);
+        return fileService.getImage(id, fileName, imageFolder);
     }
 
     @DeleteMapping("/image/{id}")

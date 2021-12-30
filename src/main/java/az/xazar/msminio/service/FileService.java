@@ -2,7 +2,7 @@ package az.xazar.msminio.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
-public interface MinioServiceInt {
+public interface FileService {
 
     //  UserDto findById(Long id);
 

@@ -1,4 +1,4 @@
-package az.xazar.msminio.service;
+package az.xazar.msminio.service.impl;
 
 import az.xazar.msminio.model.MinioFileDto;
 import az.xazar.msminio.util.IntFileUtil;

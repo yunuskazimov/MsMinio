@@ -34,18 +34,16 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 public class FileServiceIntImpl implements FileServiceInt {
     private final UserClientRest userClient;
     private final UserFileRepository userRepository;
+    private final MinioClient minioClient;
+    private final IntFileUtil intFileUtil;
+    private final String FILE_MEDIA_TYPE = "file";
+    private final String IMAGE_MEDIA_TYPE = "image";
     @Value("${minio.image-folder}")
     private String imageFolder;
     @Value("${minio.file-folder}")
     private String fileFolder;
-
-
-    private final MinioClient minioClient;
-    private final IntFileUtil intFileUtil;
     @Value("${minio.bucket}")
     private String bucketName;
-    private final String FILE_MEDIA_TYPE = "file";
-    private final String IMAGE_MEDIA_TYPE = "image";
 
 
     public FileServiceIntImpl(UserClientRest userClient,

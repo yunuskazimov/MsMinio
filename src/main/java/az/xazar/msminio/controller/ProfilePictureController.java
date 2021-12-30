@@ -20,40 +20,39 @@ public class ProfilePictureController {
     @Value("${minio.image-folder}")
     private String imageFolder;
 
-
     public ProfilePictureController(ProfilePictureService profilePictureService) {
         this.profilePictureService = profilePictureService;
     }
 
-
     @PostMapping("/image/{id}")
-    @ApiOperation(value = "Add User Image")
-    public ResponseEntity<String> createImage(@PathVariable("id") Long id,
+    @ApiOperation(value = "Add User Profile Picture")
+    public ResponseEntity<String> createImage(@PathVariable("id") Long userId,
                                               @Valid @RequestParam MultipartFile file,
-                                              String requestType) {
-        return ResponseEntity.status(200).body(profilePictureService.uploadImageForProfile(file, id, requestType));
+                                              String type) {
+        return ResponseEntity.status(200).body(
+                profilePictureService.uploadImageForProfile(file, userId, type));
     }
 
     @PutMapping("/image/{id}")
-    @ApiOperation(value = "Update User Image")
+    @ApiOperation(value = "Update User Profile Picture")
     public ResponseEntity<String> updateImage(@PathVariable("id") Long userId,
                                               @RequestParam Long id,
-                                              @Valid @RequestParam MultipartFile multipartFile,
+                                              @Valid @RequestParam MultipartFile file,
                                               @RequestParam String type) {
         return ResponseEntity.status(200).body(
-                profilePictureService.updateUserImage(id,userId,multipartFile,type));
+                profilePictureService.updateImageForProfile(id, userId, file, type));
     }
 
     @GetMapping("/image/{fileName}")
-    @ApiOperation(value = "Get User photo")
+    @ApiOperation(value = "Get User Profile Picture")
     public byte[] getImage(@PathVariable("fileName") String fileName) {
         return profilePictureService.getFile(fileName, imageFolder);
     }
 
     @DeleteMapping("/image/{id}")
-    public void deleteUserFile(@PathVariable Long id,
-                               @RequestParam String fileName) {
-        profilePictureService.deleteUserImage(id, fileName);
+    @ApiOperation(value = "Delete User Profile Picture By Image Id")
+    public void deleteUserFile(@PathVariable Long id) {
+        profilePictureService.deleteUserImage(id);
     }
 
 }
