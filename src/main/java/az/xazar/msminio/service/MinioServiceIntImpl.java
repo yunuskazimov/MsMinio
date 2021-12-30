@@ -79,6 +79,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
                     .userId(userId)
                     .fileUrl(fileUrl)
                     .requestTypeName(type)
+                    .originalName(file.getOriginalFilename())
                     .fileName(fileName)
                     .isDeleted(false)
                     .build());
@@ -101,7 +102,11 @@ public class MinioServiceIntImpl implements MinioServiceInt {
         UsersFileEntity entity = userRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity Not Found"));
+
         if (!entity.isDeleted()) {
+
+            deleteFileById(id);
+
             MinioFileDto minioFileDto = minioService.uploadFile(MinioFileDto.builder()
                     .file(file)
                     .build(), userId, fileFolder);
@@ -115,6 +120,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
                         .id(entity.getId())
                         .userId(userId)
                         .fileUrl(fileUrl)
+                        .originalName(file.getOriginalFilename())
                         .requestTypeName(type)
                         .fileName(fileName)
                         //  .isDeleted(false)
@@ -152,10 +158,10 @@ public class MinioServiceIntImpl implements MinioServiceInt {
     @Transactional
     public String deleteFileById(Long id) {
 
-        log.info("deleteUserImage started from User with {}", kv("id", id));
+        log.info("deleteFile started from User with {}", kv("id", id));
 
         UsersFileEntity usersFileEntity = userRepository.findById(id)
-                .filter(e -> !e.isDeleted())
+              //  .filter(e -> !e.isDeleted())
                 .orElseThrow(() ->
                         new EntityNotFoundException(UsersFileEntity.class, id));
 
@@ -163,50 +169,25 @@ public class MinioServiceIntImpl implements MinioServiceInt {
 
         Long userId = Long.valueOf(fileName.split("[/]")[1].split("[i][i]")[0]);
 
-        log.info("deleteUserImage started from User with {}", kv("userId", userId));
+        log.info("deleteFile started from User with {}", kv("userId", userId));
 
         userClient.getById(userId);
 
         if (!usersFileEntity.isDeleted()) {
-            deleteFileByFolder(usersFileEntity.getFileName());
+            minioService.deleteFile(usersFileEntity.getFileName());
             usersFileEntity.setDeleted(true);
             userRepository.save(usersFileEntity);
         } else {
-            log.info("deleteUserFile already completed. {}", kv("Deleted Time", usersFileEntity.getUpdatedAt()));
+            log.info("deleteFile already completed. {}", kv("Deleted Time", usersFileEntity.getUpdatedAt()));
             return "File Already Deleted. Delete Time: " + usersFileEntity.getUpdatedAt();
         }
 
-        log.info("deleteUserImage completed successfully from User with {} ",
+        log.info("deleteFile completed successfully from User with {} ",
                 kv("userId", userId));
         return "File Deleted";
     }
 
-    @SneakyThrows
-    private void deleteFileByFolder(String fileName) {
 
-        log.info("deleteFile started from User with {}", kv("fileName", fileName));
-        String objectName = fileName;
-        minioClient.removeObject(RemoveObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .build());
-        log.info("deleteFile completed successfully from User with {} ",
-                kv("fileName", fileName));
-
-    }
-
-//    public String getFileUrl(Long id, String fileName) {
-//
-//        log.info("getFile url started with {}", kv("fileName", fileName + ",userId: " + id));
-//        UsersFileEntity entity = userRepository.
-//                findAllByUserIdAndFileName(id, fileName)
-//                .orElseThrow(() -> new FileNotFoundException(" "));
-//
-//        return entity.getFileUrl();
-//
-//    }
-//
-//
 //    private String getFileUrl(String path) {
 //        try {
 //            String url = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()

@@ -1,11 +1,12 @@
 package az.xazar.msminio.service;
 
 import az.xazar.msminio.clinet.UserClientRest;
+import az.xazar.msminio.entity.ProfilePictureEntity;
 import az.xazar.msminio.entity.UsersFileEntity;
-import az.xazar.msminio.model.clinet.UserDto;
 import az.xazar.msminio.model.error.EntityNotFoundException;
+import az.xazar.msminio.model.error.FileCantUpdateException;
 import az.xazar.msminio.model.error.FileCantUploadException;
-import az.xazar.msminio.repository.UserFileRepository;
+import az.xazar.msminio.repository.ProfilePictureRepository;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
@@ -32,57 +33,61 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Service
 @Slf4j
-public class FileServiceImpl implements FileService {
+public class ProfilePictureServiceImpl implements ProfilePictureService {
     private final UserClientRest userClient;
-    private final UserFileRepository userRepository;
-    @Value("${minio.image-folder}")
-    private String imageFolder;
-    @Value("${minio.file-folder}")
-    private String fileFolder;
-
+    private final ProfilePictureRepository pictureRepo;
 
     private final MinioClient minioClient;
     private final IntFileUtil intFileUtil;
+
+    @Value("${minio.image-folder}")
+    private String imageFolder;
     @Value("${minio.bucket}")
     private String bucketName;
-    private final String VIDEO_MEDIA_TYPE = "video";
+
     private final String IMAGE_MEDIA_TYPE = "image";
 
+    @Value("${server.address}")
+    String msAdress;
+    @Value("${server.port}")
+    String msPort;
+    @Value("${server.secure}")
+    String msSecure;
 
-    public FileServiceImpl(UserClientRest userClient,
-                           UserFileRepository userRepository,
-                           MinioClient minioClient,
-                           IntFileUtil intFileUtil) {
+
+    public ProfilePictureServiceImpl(UserClientRest userClient,
+                                     ProfilePictureRepository pictureRepo,
+                                     MinioClient minioClient,
+                                     IntFileUtil intFileUtil) {
         this.userClient = userClient;
-        this.userRepository = userRepository;
+        this.pictureRepo = pictureRepo;
         this.minioClient = minioClient;
         this.intFileUtil = intFileUtil;
     }
 
 
     @Override
-    public UserDto findById(Long id) {
-        log.info("findById User:   " + userClient.getById(id).toString());
-        return userClient.getById(id);
-    }
-
-    @Override
     @Transactional
-    public String uploadImageForUser(MultipartFile file, Long id, String type) {
-        log.info("uploadImage to User started with, {}",
-                kv("partnerId", id));
+    public String uploadImageForProfile(MultipartFile file, Long userId, String type) {
+        log.info("uploadImage to Profile started with, {}",
+                kv("partnerId", userId));
 
-        String fileName = uploadImage(file, imageFolder);
-        userClient.getById(id);
+        String imageName = uploadImage(file, imageFolder);
+        String imageUrl = getPreSignedUrl(imageName);
+
+        userClient.getById(userId);
 
         try {
-            userRepository.save(UsersFileEntity.builder()
-                    .userId(id)
+            pictureRepo.save(ProfilePictureEntity.builder()
+                    .userId(userId)
+                    .imageName(imageName)
                     .requestTypeName(type)
-                    .fileName(fileName)
+                    .imageUrl(imageUrl)
+                    .originalName(file.getOriginalFilename())
+                    .isDeleted(false)
                     .build());
 
-            return fileName;
+            return imageName;
         } catch (FileCantUploadException e) {
             throw new FileCantUploadException(file.getOriginalFilename());
         }
@@ -92,20 +97,39 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public String updateUserImage(MultipartFile file, Long id) {
-        log.info("updateImage to User started with, {}",
-                kv("partnerId", id));
-        String fileName = uploadImage(file, imageFolder);
-        userClient.getById(id);
-        UsersFileEntity usersFileEntity = userRepository.findAllByUserIdAndFileName(id,fileName)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(UsersFileEntity.class, id));
+    public String updateUserImage(Long id, Long userId, MultipartFile file, String type) {
+        log.info("updateImage to Profile started with, {}",
+                kv("partnerId", userId));
 
-        deleteFile(usersFileEntity.getFileName(), imageFolder);
+        userClient.getById(userId);
 
-        usersFileEntity.setFileName(fileName);
-        userRepository.save(usersFileEntity);
-        return fileName;
+        ProfilePictureEntity entity = pictureRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(ProfilePictureEntity.class, id));
+
+        if (!entity.isDeleted()) {
+            String imageName = entity.getImageName();
+
+            deleteFile(imageName, imageFolder);
+
+            String newImageName = uploadImage(file, imageFolder);
+            String imageUrl = getPreSignedUrl(newImageName);
+
+            try {
+                pictureRepo.save(ProfilePictureEntity.builder()
+                        .userId(userId)
+                        .imageName(newImageName)
+                        .requestTypeName(type)
+                        .imageUrl(imageUrl)
+                        .originalName(file.getOriginalFilename())
+                       // .isDeleted(false)
+                        .build());
+
+                return newImageName;
+            } catch (FileCantUploadException e) {
+                throw new FileCantUploadException(file.getOriginalFilename());
+            }
+        }
+        throw new FileCantUpdateException(file.getOriginalFilename());
     }
 
     @Override
@@ -113,54 +137,38 @@ public class FileServiceImpl implements FileService {
         log.info("deleteUserImage started from User with {}",
                 kv("id", id));
 
-        userClient.getById(id);
-        UsersFileEntity usersFileEntity = userRepository.findAllByUserIdAndFileName(id,fileName)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(UsersFileEntity.class, id));
-
-        if (usersFileEntity.getFileName() != null) {
-            deleteFile(usersFileEntity.getFileName(), imageFolder);
-            usersFileEntity.setFileName(null);
-            userRepository.save(usersFileEntity);
-        }
+//        userClient.getById(id);
+//        UsersFileEntity usersFileEntity = userRepository.findAllByUserIdAndFileName(id,fileName)
+//                .orElseThrow(() ->
+//                        new EntityNotFoundException(UsersFileEntity.class, id));
+//
+//        if (usersFileEntity.getFileName() != null) {
+//            deleteFile(usersFileEntity.getFileName(), imageFolder);
+//            usersFileEntity.setFileName(null);
+//            userRepository.save(usersFileEntity);
+//        }
 
         log.info("deleteUserImage completed successfully from User with {} ", kv("id", id));
 
     }
 
-    @Override
-    public String uploadUserFile(MultipartFile file, Long id) {
-        return null;
-    }
-
-    @Override
-    public String updateUserFile(MultipartFile file, Long id) {
-        return null;
-    }
-
-    @Override
-    public void deleteUserFile(Long id) {
-
-    }
-
     @Transactional
-    @Override
     public void deleteFile(String fileName, String folder) {
-        log.info("deleteFile started from User with {}", kv("fileName", fileName));
+        log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
         deleteFileS(fileName, folder);
-        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
+        log.info("delete Profile Image completed successfully from User with {} ", kv("fileName", fileName));
     }
 
     @Transactional
     @Override
     public byte[] getFile(String fileName, String folder) {
-        log.info("getFile started with {}", kv("fileName", fileName));
+        log.info("get Profile Image started with {}", kv("fileName", fileName));
         return getFileS(fileName, folder);
     }
 
     @SneakyThrows
     public byte[] getFileS(String fileName, String folder) {
-        log.info("getFile started with {}", kv("fileName", fileName));
+        log.info("get Profile Image started with {}", kv("fileName", fileName));
         String objectName = folder + fileName;
         GetObjectArgs minioRequest = GetObjectArgs.builder()
                 .bucket(bucketName)
@@ -182,20 +190,20 @@ public class FileServiceImpl implements FileService {
 
     @SneakyThrows
     public void deleteFileS(String fileName, String folder) {
-        log.info("deleteFile started from User with {}", kv("fileName", fileName));
+        log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
         String objectName = folder + fileName;
         minioClient.removeObject(RemoveObjectArgs.builder()
                 .bucket(bucketName)
                 .object(objectName)
                 .build());
-        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
+        log.info("delete Profile Image completed successfully from User with {} ", kv("fileName", fileName));
     }
 
     @SneakyThrows
     public String uploadImage(MultipartFile file, String folder) {
         String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
-        String fileName = intFileUtil.generateUniqueNameForImage(fileExtension);
-        String objectName = folder + fileName;
+        String imageName = intFileUtil.generateUniqueNameForImage(fileExtension);
+        String objectName = folder + imageName;
 
         BufferedImage image = ImageIO.read(file.getInputStream());
         int width = image.getWidth();
@@ -218,7 +226,7 @@ public class FileServiceImpl implements FileService {
                         inputStream.available(), -1)
                 .contentType(file.getContentType())
                 .build());
-        return fileName;
+        return imageName;
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage,
@@ -237,21 +245,8 @@ public class FileServiceImpl implements FileService {
         return outputImage;
     }
 
-    @SneakyThrows
-    public String uploadVideo(MultipartFile file, String folder) {
-        String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file,
-                VIDEO_MEDIA_TYPE);
-        String fileName = intFileUtil.generateUniqueNameForImage(fileExtension);
-
-        String objectName = folder + fileName;
-
-        minioClient.putObject(PutObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .stream(file.getInputStream(),
-                        file.getInputStream().available(), -1)
-                .contentType(file.getContentType())
-                .build());
-        return fileName;
+    private String getPreSignedUrl(String filename) {
+        return msSecure + "://" + msAdress + ":" + msPort + "/file/".concat(filename);
     }
+
 }

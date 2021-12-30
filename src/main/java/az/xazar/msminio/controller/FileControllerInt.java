@@ -19,8 +19,7 @@ public class FileControllerInt {
 
     @Value("${minio.image-folder}")
     private String imageFolder;
-    @Value("${minio.file-folder}")
-    private String fileFolder;
+
 
     public FileControllerInt(FileServiceInt fileService) {
         this.fileService = fileService;
