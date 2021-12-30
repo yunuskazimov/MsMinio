@@ -4,6 +4,7 @@ import az.xazar.msminio.model.MinioFileDto;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.*;
 import io.minio.messages.Item;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,13 +13,16 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class MinioService {
     private final IntFileUtil intFileUtil;
     private final MinioClient minioClient;
+
     private final String FILE_MEDIA_TYPE = "file";
-    private final String IMAGE_MEDIA_TYPE = "image";
+
     @Value("${server.address}")
     String msAdress;
     @Value("${server.port}")
@@ -99,4 +103,14 @@ public class MinioService {
         return msSecure + "://" + msAdress + ":" + msPort + "/file/".concat(filename);
     }
 
+    @SneakyThrows
+    public void deleteFile(String fileName) {
+        log.info("deleteFile started from User with {}", kv("fileName", fileName));
+        String objectName = fileName;
+        minioClient.removeObject(RemoveObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .build());
+        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
+    }
 }

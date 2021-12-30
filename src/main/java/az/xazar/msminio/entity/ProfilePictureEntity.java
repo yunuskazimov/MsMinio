@@ -12,17 +12,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 @Entity
-@Table(name = "users_file")
+@Table(name = "profile_picture")
 @Builder
-public class UsersFileEntity {
+public class ProfilePictureEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long userId;
-    private String fileName;
+    private String imageName;
     private String requestTypeName;
-    private String fileUrl;
+    private String imageUrl;
 
     private String originalName;
 
