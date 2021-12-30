@@ -1,7 +1,7 @@
 package az.xazar.msminio.controller;
 
-import az.xazar.msminio.service.impl.MinioService;
 import az.xazar.msminio.service.impl.FileServiceImpl;
+import az.xazar.msminio.service.impl.MinioServiceImpl;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +17,12 @@ import java.io.IOException;
 @RequestMapping(value = "/int/api/")
 public class MinioFileController {
 
-    private final MinioService minioService;
+    private final MinioServiceImpl minioServiceImpl;
     private final FileServiceImpl fileService;
 
 
-    public MinioFileController(MinioService minioService, FileServiceImpl fileService) {
-        this.minioService = minioService;
+    public MinioFileController(MinioServiceImpl minioServiceImpl, FileServiceImpl fileService) {
+        this.minioServiceImpl = minioServiceImpl;
         this.fileService = fileService;
     }
 
@@ -54,7 +54,7 @@ public class MinioFileController {
 
 //    @GetMapping("/file")
 //    @ApiOperation(value = "Internal: Get User Files")
-//    public ResponseEntity<Object> getFiles() {
+//    public ResponseEntity<Object> getAllFilesAndImagesAsList() {
 //        return ResponseEntity.ok(minioService.getListObjects());
 //    }
 

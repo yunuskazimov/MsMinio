@@ -12,12 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import static az.xazar.msminio.model.error.ErrorCodes.NOT_FOUND;
-import static az.xazar.msminio.model.error.ErrorCodes.UNEXPECTED_EXCEPTION;
-import static az.xazar.msminio.model.error.ErrorCodes.EXTENSION_NOT_ACCEPTABLE;
-import static az.xazar.msminio.model.error.ErrorCodes.FILE_NOT_UPDATE;
-import static az.xazar.msminio.model.error.ErrorCodes.FILE_NOT_UPLOAD;
-import static az.xazar.msminio.model.error.ErrorCodes.ENTITY_NOT_FOUND;
+import static az.xazar.msminio.model.error.ErrorCodes.*;
 
 
 @ControllerAdvice

@@ -3,8 +3,8 @@ package az.xazar.msminio.service.impl;
 import az.xazar.msminio.clinet.UserClientRest;
 import az.xazar.msminio.entity.ProfilePictureEntity;
 import az.xazar.msminio.model.error.EntityNotFoundException;
-import az.xazar.msminio.model.error.FileCantUpdateException;
 import az.xazar.msminio.model.error.FileCantUploadException;
+import az.xazar.msminio.model.error.FileNotFoundException;
 import az.xazar.msminio.repository.ProfilePictureRepository;
 import az.xazar.msminio.service.ProfilePictureService;
 import az.xazar.msminio.util.IntFileUtil;
@@ -12,23 +12,28 @@ import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
-import io.minio.errors.ErrorResponseException;
-import io.minio.messages.ErrorResponse;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
+import static org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE;
 
 @Service
 @Slf4j
@@ -126,30 +131,30 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
                 .orElseThrow(() -> new EntityNotFoundException(ProfilePictureEntity.class, id));
 
 
-            intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
-            deleteUserImage(id);
+        intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
+        deleteUserImage(id);
 
-            String newImageName = uploadImage(userId, file, imageFolder);
-            String imageUrl = getPreSignedUrl(newImageName);
+        String newImageName = uploadImage(userId, file, imageFolder);
+        String imageUrl = getPreSignedUrl(newImageName);
 
-            try {
-                pictureRepo.save(ProfilePictureEntity.builder()
-                        .id(id)
-                        .userId(userId)
-                        .imageName(newImageName)
-                        .requestTypeName(type)
-                        .imageUrl(imageUrl)
-                        .originalName(file.getOriginalFilename())
-                        .isDeleted(false)
-                        .build());
+        try {
+            pictureRepo.save(ProfilePictureEntity.builder()
+                    .id(id)
+                    .userId(userId)
+                    .imageName(newImageName)
+                    .requestTypeName(type)
+                    .imageUrl(imageUrl)
+                    .originalName(file.getOriginalFilename())
+                    .isDeleted(false)
+                    .build());
 
-                log.info("updateImage to Profile completed with, {}, {}",
-                        kv("partnerId", userId), kv("fileName", newImageName));
+            log.info("updateImage to Profile completed with, {}, {}",
+                    kv("partnerId", userId), kv("fileName", newImageName));
 
-                return newImageName;
-            } catch (FileCantUploadException e) {
-                throw new FileCantUploadException(file.getOriginalFilename());
-            }
+            return newImageName;
+        } catch (FileCantUploadException e) {
+            throw new FileCantUploadException(file.getOriginalFilename());
+        }
     }
 
     @Override
@@ -194,32 +199,46 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
 
     @Transactional
     @Override
-    public byte[] getFile(String fileName, String folder) {
-        log.info("get Profile Image started with {}", kv("fileName", fileName));
-        return getFileS(fileName, folder);
-    }
+    public ResponseEntity<Object> getFile(HttpServletRequest request) {
+        log.info("getFile started with {}", kv("request", request));
 
-    @SneakyThrows
-    private byte[] getFileS(String fileName, String folder) {
-        log.info("get Profile Image continuous with {}", kv("fileName", fileName));
-        String objectName = folder + fileName;
-        GetObjectArgs minioRequest = GetObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .build();
-        byte[] bytes = null;
+        String pattern = (String) request.getAttribute(BEST_MATCHING_PATTERN_ATTRIBUTE);
+        String fileName = new AntPathMatcher()
+                .extractPathWithinPattern(pattern, request.getServletPath());
+        Long userId = Long.valueOf(fileName.split("[i][i]")[0]);
+
+        log.info("getFile started with {}", kv("fileName", fileName + ",userId: " + userId));
+        pictureRepo.findByUserIdAndImageName(userId, fileName)
+                .filter(entity -> !entity.isDeleted())
+                .orElseThrow(
+                        () -> new EntityNotFoundException(ProfilePictureEntity.class, userId));
+        log.info("getFile completed with {}", kv("fileName", fileName + ",userId: " + userId));
+
         try {
-            bytes = minioClient.getObject(minioRequest).readAllBytes();
-        } catch (ErrorResponseException e) {
-            ErrorResponse response = e.errorResponse();
-            log.error("Minio error occurred with: {}, {}, {}",
-                    kv("code", response.code()), kv("message", response.message()),
-                    kv("objectName", response.objectName()));
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(IOUtils.toByteArray(getObject(imageFolder + "/" + fileName)));
+        } catch (IOException e) {
+            throw new FileNotFoundException(e.getMessage());
         }
-        log.info("get Profile Image completed with {}", kv("fileName", fileName));
-
-        return bytes;
     }
+
+
+    protected InputStream getObject(String filename) {
+        InputStream stream;
+        try {
+            stream = minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(filename)
+                    .build());
+        } catch (Exception e) {
+            log.error("Happened error when get list objects from minio: ", e);
+            return null;
+        }
+
+        return stream;
+    }
+
 
     @SneakyThrows
     private String uploadImage(Long userid, MultipartFile file, String folder) {

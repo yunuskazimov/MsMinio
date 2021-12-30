@@ -1,6 +1,9 @@
 package az.xazar.msminio.service;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
 
 public interface ProfilePictureService {
 
@@ -10,6 +13,6 @@ public interface ProfilePictureService {
 
     String deleteUserImage(Long id);
 
-    byte[] getFile(String fileName, String folder);
+    ResponseEntity<Object> getFile(HttpServletRequest request);
 
 }
