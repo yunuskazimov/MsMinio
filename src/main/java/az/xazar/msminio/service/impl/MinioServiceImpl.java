@@ -1,6 +1,7 @@
 package az.xazar.msminio.service.impl;
 
 import az.xazar.msminio.model.MinioFileDto;
+import az.xazar.msminio.service.MinioService;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.*;
 import io.minio.messages.Item;
@@ -8,6 +9,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,7 +19,7 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Slf4j
 @Service
-public class MinioService {
+public class MinioServiceImpl implements MinioService {
     private final IntFileUtil intFileUtil;
     private final MinioClient minioClient;
 
@@ -33,11 +35,13 @@ public class MinioService {
     private String bucketName;
 
 
-    public MinioService(IntFileUtil intFileUtil, MinioClient minioClient) {
+    public MinioServiceImpl(IntFileUtil intFileUtil, MinioClient minioClient) {
         this.intFileUtil = intFileUtil;
         this.minioClient = minioClient;
     }
 
+    @Transactional
+    @Override
     public MinioFileDto uploadFile(MinioFileDto request, Long userId, String folder) {
         intFileUtil.getFileExtensionIfAcceptable(request.getFile(), FILE_MEDIA_TYPE);
         String fileName = intFileUtil.generateUniqueNameForFile(userId);
@@ -62,6 +66,8 @@ public class MinioService {
                 .build();
     }
 
+    @Transactional
+    @Override
     public InputStream getObject(String filename) {
         InputStream stream;
         try {
@@ -77,6 +83,8 @@ public class MinioService {
         return stream;
     }
 
+    @Transactional
+    @Override
     public List<MinioFileDto> getListObjects() {
         List<MinioFileDto> objects = new ArrayList<>();
         try {
@@ -103,6 +111,8 @@ public class MinioService {
         return msSecure + "://" + msAdress + ":" + msPort + "/file/".concat(filename);
     }
 
+    @Transactional
+    @Override
     @SneakyThrows
     public void deleteFile(String fileName) {
         log.info("deleteFile started from User with {}", kv("fileName", fileName));
