@@ -19,13 +19,13 @@ public class IntFileUtil {
     private String[] acceptableImageExtensions;
 
     private boolean isExtensionAcceptable(String extension, String mediaType) {
-        if (mediaType.equals("image")){
+        if (mediaType.equals("image")) {
             for (String s : acceptableImageExtensions) {
                 if (s.equalsIgnoreCase(extension)) {
                     return true;
                 }
             }
-        }else if (mediaType.equals("file")){
+        } else if (mediaType.equals("file")) {
             for (String s : acceptableFileExtensions) {
                 if (s.equalsIgnoreCase(extension)) {
                     return true;
@@ -44,15 +44,15 @@ public class IntFileUtil {
         }
     }
 
-    public String generateUniqueNameForFile(Long id) {
-        return id + "ii" + LocalDateTime.now() + "-";
+    public String generateUniqueNameForFile(Long userId) {
+        return userId + "ii" + LocalDateTime.now() + "-";
     }
 
-    public String generateUniqueName(Long id, String extension) {
-        return id + "ii" + LocalDateTime.now() + "." + extension;
+    public String generateUniqueName(Long userId, String extension) {
+        return userId + "ii" + LocalDateTime.now() + "." + extension;
     }
 
-    public String generateUniqueNameForImage(String extension) {
-        return LocalDateTime.now() + "." + extension;
+    public String generateUniqueNameForImage(Long userId, String extension) {
+        return userId + "ii" + LocalDateTime.now() + "." + extension;
     }
 }

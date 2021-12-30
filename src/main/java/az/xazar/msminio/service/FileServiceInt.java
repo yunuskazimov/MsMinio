@@ -11,7 +11,7 @@ public interface FileServiceInt {
 
     String uploadFileForUser(MultipartFile file, Long id, String type);
 
-    void deleteUserImage(Long id,String fileName);
+    void deleteUserImage(Long id, String fileName);
 
     byte[] getImage(Long id, String fileName, String folder);
 

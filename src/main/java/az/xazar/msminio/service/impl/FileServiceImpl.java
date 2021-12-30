@@ -1,14 +1,14 @@
-package az.xazar.msminio.service;
+package az.xazar.msminio.service.impl;
 
 import az.xazar.msminio.clinet.UserClientRest;
 import az.xazar.msminio.entity.UsersFileEntity;
 import az.xazar.msminio.model.MinioFileDto;
 import az.xazar.msminio.model.error.*;
 import az.xazar.msminio.repository.UserFileRepository;
+import az.xazar.msminio.service.FileService;
+import az.xazar.msminio.service.impl.MinioService;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.MinioClient;
-import io.minio.RemoveObjectArgs;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +27,7 @@ import static org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTE
 
 @Service
 @Slf4j
-public class MinioServiceIntImpl implements MinioServiceInt {
+public class FileServiceImpl implements FileService {
     private final UserClientRest userClient;
     private final UserFileRepository userRepository;
 
@@ -46,11 +46,11 @@ public class MinioServiceIntImpl implements MinioServiceInt {
     private String bucketName;
 
 
-    public MinioServiceIntImpl(UserClientRest userClient,
-                               UserFileRepository userRepository,
-                               MinioService minioService,
-                               MinioClient minioClient,
-                               IntFileUtil intFileUtil) {
+    public FileServiceImpl(UserClientRest userClient,
+                           UserFileRepository userRepository,
+                           MinioService minioService,
+                           MinioClient minioClient,
+                           IntFileUtil intFileUtil) {
         this.userClient = userClient;
         this.userRepository = userRepository;
         this.minioService = minioService;
@@ -105,6 +105,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
 
         if (!entity.isDeleted()) {
 
+            intFileUtil.getFileExtensionIfAcceptable(file, FILE_MEDIA_TYPE);
             deleteFileById(id);
 
             MinioFileDto minioFileDto = minioService.uploadFile(MinioFileDto.builder()
@@ -161,7 +162,7 @@ public class MinioServiceIntImpl implements MinioServiceInt {
         log.info("deleteFile started from User with {}", kv("id", id));
 
         UsersFileEntity usersFileEntity = userRepository.findById(id)
-              //  .filter(e -> !e.isDeleted())
+                //  .filter(e -> !e.isDeleted())
                 .orElseThrow(() ->
                         new EntityNotFoundException(UsersFileEntity.class, id));
 

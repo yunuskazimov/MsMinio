@@ -16,8 +16,8 @@ public class UserClientRest {
         this.apiUrl = apiUrl;
     }
 
-    public UserDto getById(Long id){
-        String url = String.format("%s/%d",apiUrl,id);
-        return restTemplate.getForObject(url,UserDto.class);
+    public UserDto getById(Long id) {
+        String url = String.format("%s/%d", apiUrl, id);
+        return restTemplate.getForObject(url, UserDto.class);
     }
 }
