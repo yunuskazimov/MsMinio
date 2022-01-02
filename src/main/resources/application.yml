@@ -29,9 +29,10 @@ file:
 
 server:
   port: 8052
-  address: 0.0.0.0
+  address: localhost
 
   secure: http
+  file-controller-path: /int/api/file
 
 
 client:

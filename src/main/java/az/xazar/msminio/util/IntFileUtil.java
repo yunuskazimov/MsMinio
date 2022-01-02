@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class IntFileUtil {
@@ -45,14 +46,17 @@ public class IntFileUtil {
     }
 
     public String generateUniqueNameForFile(Long userId) {
-        return userId + "ii" + LocalDateTime.now() + "-";
+        return userId + "ii" + LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + "-";
     }
 
     public String generateUniqueName(Long userId, String extension) {
-        return userId + "ii" + LocalDateTime.now() + "." + extension;
+        return userId + "ii" + LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + "." + extension;
     }
 
     public String generateUniqueNameForImage(Long userId, String extension) {
-        return userId + "ii" + LocalDateTime.now() + "." + extension;
+        return userId + "ii" + LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + "." + extension;
     }
 }

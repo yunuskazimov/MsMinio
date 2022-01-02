@@ -7,12 +7,14 @@ import java.util.List;
 
 public interface MinioService {
 
-     MinioFileDto uploadFile(MinioFileDto request, Long userId, String folder);
+    MinioFileDto uploadFile(MinioFileDto request, Long userId, String folder);
 
-     InputStream getObject(String filename) ;
+    InputStream getObject(String filename);
 
-     List<MinioFileDto> getListObjects() ;
+    List<MinioFileDto> getListObjects();
 
-     void deleteFile(String fileName) ;
+    void deleteFile(String fileName);
+
+    void deleteFile(String fileName, String folder);
 
 }
