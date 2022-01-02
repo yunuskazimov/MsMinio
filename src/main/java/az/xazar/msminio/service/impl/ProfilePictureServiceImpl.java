@@ -6,15 +6,16 @@ import az.xazar.msminio.model.error.EntityNotFoundException;
 import az.xazar.msminio.model.error.FileCantUploadException;
 import az.xazar.msminio.model.error.FileNotFoundException;
 import az.xazar.msminio.repository.ProfilePictureRepository;
+import az.xazar.msminio.service.MinioService;
 import az.xazar.msminio.service.ProfilePictureService;
 import az.xazar.msminio.util.IntFileUtil;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,7 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     private final ProfilePictureRepository pictureRepo;
     private final MinioClient minioClient;
     private final IntFileUtil intFileUtil;
+    private final MinioService minioService;
 
     private final String IMAGE_MEDIA_TYPE = "image";
     @Value("${server.address}")
@@ -59,11 +61,13 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     public ProfilePictureServiceImpl(UserClientRest userClient,
                                      ProfilePictureRepository pictureRepo,
                                      MinioClient minioClient,
-                                     IntFileUtil intFileUtil) {
+                                     IntFileUtil intFileUtil,
+                                     MinioService minioService) {
         this.userClient = userClient;
         this.pictureRepo = pictureRepo;
         this.minioClient = minioClient;
         this.intFileUtil = intFileUtil;
+        this.minioService = minioService;
     }
 
     @Override
@@ -78,8 +82,7 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         pictureRepo.findByUserId(userId).ifPresentOrElse(entity -> {
 
             log.info("uploadImage to Profile is Present and forwarded to Update Image " +
-                            "with, {}",
-                    kv("partnerId", userId));
+                    "with, {}", kv("partnerId", userId));
 
             ref.img = updateImageForProfile(entity.getId(), userId, file, type);
 
@@ -160,7 +163,6 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     @Override
     @Transactional
     public String deleteUserImage(Long id) {
-
         log.info("deleteUserImage started from User with {}", kv("id", id));
 
         ProfilePictureEntity entity = pictureRepo.findById(id)
@@ -170,7 +172,7 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         userClient.getById(entity.getUserId());
 
         if (!entity.isDeleted()) {
-            deleteFile(entity.getImageName(), imageFolder);
+            minioService.deleteFile(entity.getImageName(), imageFolder);
             entity.setDeleted(true);
             pictureRepo.save(entity);
         } else {
@@ -185,33 +187,16 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
 
     }
 
-    @SneakyThrows
-    public void deleteFile(String fileName, String folder) {
-        log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
-        String objectName = folder + fileName;
-        minioClient.removeObject(RemoveObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .build());
-        log.info("delete Profile Image completed successfully from User " +
-                "with {} ", kv("fileName", fileName));
-    }
-
     @Transactional
     @Override
     public ResponseEntity<Object> getFile(HttpServletRequest request) {
         log.info("getFile started with {}", kv("request", request));
 
-        String pattern = (String) request.getAttribute(BEST_MATCHING_PATTERN_ATTRIBUTE);
-        String fileName = new AntPathMatcher()
-                .extractPathWithinPattern(pattern, request.getServletPath());
+        String fileName = getFileName(request);
         Long userId = Long.valueOf(fileName.split("[i][i]")[0]);
 
         log.info("getFile started with {}", kv("fileName", fileName + ",userId: " + userId));
-        pictureRepo.findByUserIdAndImageName(userId, fileName)
-                .filter(entity -> !entity.isDeleted())
-                .orElseThrow(
-                        () -> new EntityNotFoundException(ProfilePictureEntity.class, userId));
+        checkEntityIsDeleted(fileName, userId);
         log.info("getFile completed with {}", kv("fileName", fileName + ",userId: " + userId));
 
         try {
@@ -221,6 +206,21 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         } catch (IOException e) {
             throw new FileNotFoundException(e.getMessage());
         }
+    }
+
+
+    private void checkEntityIsDeleted(String fileName, Long userId) {
+        pictureRepo.findByUserIdAndImageName(userId, fileName)
+                .filter(entity -> !entity.isDeleted())
+                .orElseThrow(
+                        () -> new EntityNotFoundException(ProfilePictureEntity.class, userId));
+    }
+
+    @NotNull
+    private String getFileName(HttpServletRequest request) {
+        String pattern = (String) request.getAttribute(BEST_MATCHING_PATTERN_ATTRIBUTE);
+        String fileName = new AntPathMatcher().extractPathWithinPattern(pattern, request.getServletPath());
+        return fileName;
     }
 
 
@@ -244,8 +244,23 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
     private String uploadImage(Long userid, MultipartFile file, String folder) {
         String fileExtension = intFileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
         String imageName = intFileUtil.generateUniqueNameForImage(userid, fileExtension);
-        String objectName = folder + imageName;
+        String objectName = (folder + imageName);
 
+        InputStream inputStream = getInputStream(file, fileExtension);
+
+        minioClient.putObject(PutObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .stream(inputStream,
+                        inputStream.available(), -1)
+                .contentType(file.getContentType())
+                .build());
+        return imageName;
+    }
+
+    @NotNull
+    private InputStream getInputStream(MultipartFile file,
+                                       String fileExtension) throws IOException {
         BufferedImage image = ImageIO.read(file.getInputStream());
         int width = image.getWidth();
         int height = image.getHeight();
@@ -258,16 +273,9 @@ public class ProfilePictureServiceImpl implements ProfilePictureService {
         ImageIO.write(resizeImage(image, width, height),
                 fileExtension,
                 byteArrayOutputStream);
-        InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
 
-        minioClient.putObject(PutObjectArgs.builder()
-                .bucket(bucketName)
-                .object(objectName)
-                .stream(inputStream,
-                        inputStream.available(), -1)
-                .contentType(file.getContentType())
-                .build());
-        return imageName;
+        InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+        return inputStream;
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage,

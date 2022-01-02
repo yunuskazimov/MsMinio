@@ -1,13 +1,7 @@
 package az.xazar.msminio.controller;
 
-import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.validation.Valid;
 
 //@RestController
 //@RequestMapping("/int/api/v1/")
@@ -53,6 +47,25 @@ public class FileControllerTEST {
 //                               @RequestParam String fileName) {
 //        //TODO edit it. separate for file and image
 //        fileService.deleteUserImage(id, fileName);
+//    }
+
+
+//    @PostMapping(path = "/upload", produces = MediaType.TEXT_PLAIN_VALUE)
+//    public String uploadFile(@RequestParam("image") MultipartFile file) {
+//
+//        try {
+//
+//
+//            byte[] bytes = file.getBytes();
+//            Path path = Paths.get("C:\\Users\\yunus\\Downloads\\testtt\\uploadedImages\\" + file.getOriginalFilename());
+//            Files.write(path, bytes);
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return "Error";
+//        }
+//
+//        return "File Uploaded";
 //    }
 
 

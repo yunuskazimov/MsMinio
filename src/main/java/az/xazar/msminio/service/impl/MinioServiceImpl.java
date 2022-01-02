@@ -31,6 +31,8 @@ public class MinioServiceImpl implements MinioService {
     String msPort;
     @Value("${server.secure}")
     String msSecure;
+    @Value("${server.file-controller-path}")
+    String msControllerPath;
     @Value("${minio.bucket}")
     private String bucketName;
 
@@ -45,7 +47,8 @@ public class MinioServiceImpl implements MinioService {
     public MinioFileDto uploadFile(MinioFileDto request, Long userId, String folder) {
         intFileUtil.getFileExtensionIfAcceptable(request.getFile(), FILE_MEDIA_TYPE);
         String fileName = intFileUtil.generateUniqueNameForFile(userId);
-        String objectName = folder + fileName + request.getFile().getOriginalFilename();
+        String objectName = (folder + fileName + request.getFile().getOriginalFilename())
+                .replace(" ", "_");
         try {
 
             minioClient.putObject(PutObjectArgs.builder()
@@ -108,7 +111,8 @@ public class MinioServiceImpl implements MinioService {
     }
 
     private String getPreSignedUrl(String filename) {
-        return msSecure + "://" + msAdress + ":" + msPort + "/file/".concat(filename);
+        return msSecure + "://" + msAdress + ":" + msPort + msControllerPath +
+                "/".concat(filename);
     }
 
     @Transactional
@@ -121,6 +125,21 @@ public class MinioServiceImpl implements MinioService {
                 .bucket(bucketName)
                 .object(objectName)
                 .build());
-        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
+        log.info("deleteFile completed successfully from User with {} ",
+                kv("fileName", fileName));
+    }
+
+    @Transactional
+    @Override
+    @SneakyThrows
+    public void deleteFile(String fileName, String folder) {
+        log.info("delete Profile Image started from User with {}", kv("fileName", fileName));
+        String objectName = folder + fileName;
+        minioClient.removeObject(RemoveObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectName)
+                .build());
+        log.info("delete Profile Image completed successfully from User " +
+                "with {} ", kv("fileName", fileName));
     }
 }
