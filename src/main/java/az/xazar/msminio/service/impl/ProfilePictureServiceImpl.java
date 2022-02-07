@@ -1,6 +1,6 @@
 package az.xazar.msminio.service.impl;
 
-import az.xazar.msminio.clinet.UserClientRest;
+import az.xazar.msminio.client.UserClientRest;
 import az.xazar.msminio.entity.ProfilePictureEntity;
 import az.xazar.msminio.model.error.EntityNotFoundException;
 import az.xazar.msminio.model.error.FileCantUploadException;

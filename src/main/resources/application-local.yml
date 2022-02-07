@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    password: xazar1
+    username: xazar1
+    url: jdbc:postgresql://localhost:5400/minio_users
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2KB
+      max-file-size: 5MB
+      max-request-size: 10MB
+minio:
+  url: http://localhost:9000
+  bucket: file-server-xazar
+  access-key: minio
+  secret-key: minio123
+  image-folder: profPicFolder/
+  file-folder: fileFolder/
+
+file:
+  upload:
+    acceptableFileExtensions: pdf,jpg,png,jpeg
+    acceptableImageExtensions: jpg,png,jpeg
+
+
+server:
+  port: 8053
+  address: localhost
+
+  secure: http
+  file-controller-path: /int/api/minio/file
+
+
+client:
+  users:
+    int:
+      url: http://localhost:8051/int/api/user/id/

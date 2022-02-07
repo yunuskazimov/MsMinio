@@ -1,6 +1,6 @@
 package az.xazar.msminio.controller;
 
-import az.xazar.msminio.model.clinet.FileDto;
+import az.xazar.msminio.model.client.FileDto;
 import az.xazar.msminio.service.impl.FileServiceImpl;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "/int/api/")
+@RequestMapping(value = "/int/api/minio")
 public class MinioFileController {
 
     private final FileServiceImpl fileService;

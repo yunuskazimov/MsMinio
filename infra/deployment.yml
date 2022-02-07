@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-minio-deployment
+  labels:
+    app: ms-minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-minio
+  template:
+    metadata:
+      labels:
+        app: ms-minio
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: ms.auth.secrets
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USERNAME
+                  name: ms.auth.secrets
+            - name: MS_MINIO_URL
+              valueFrom:
+                secretKeyRef:
+                  key: MS_MINIO_URL
+                  name: ms.auth.secrets
+            - name: MS_MINIO_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: MS_MINIO_PORT
+                  name: ms.auth.secrets
+            - name: CLINET_MS_USER_URL
+              valueFrom:
+                secretKeyRef:
+                  key: CLINET_MS_USER_URL
+                  name: ms.auth.secrets
+
+            - name: MINIO_URL
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_URL
+                  name: ms.auth.secrets
+            - name: MINIO_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_BUCKET
+                  name: ms.auth.secrets
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ACCESS_KEY
+                  name: ms.auth.secrets
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_SECRET_KEY
+                  name: ms.auth.secrets
+            - name: MINIO_IMAGE_FOLDER
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_IMAGE_FOLDER
+                  name: ms.auth.secrets
+            - name: MINIO_FILE_FOLDER
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_FILE_FOLDER
+                  name: ms.auth.secrets
+            - name: MINIO_FILE_CONTROLLER_PATH
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_FILE_CONTROLLER_PATH
+                  name: ms.auth.secrets
+          name: ms-minio
+          image: yunuskazimov94/ms-minio
+          ports:
+            - containerPort: 8056
+              protocol: TCP
+#          readinessProbe:
+#            httpGet:
+#              path: /readiness
+#              port: 8090
+#            initialDelaySeconds: 45
+#            periodSeconds: 15
+#          livenessProbe:
+#            httpGet:
+#              path: /liveness
+#              port: 8090
+#            initialDelaySeconds: 45
+#            periodSeconds: 15

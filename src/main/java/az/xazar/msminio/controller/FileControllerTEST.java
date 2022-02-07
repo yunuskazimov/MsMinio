@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Value;
 
 //@RestController
 //@RequestMapping("/int/api/v1/")
-@Slf4j
+//@Slf4j
 public class FileControllerTEST {
 
-    @Value("${minio.image-folder}")
-    private String imageFolder;
+//    @Value("${minio.image-folder}")
+//    private String imageFolder;
 
 
 //    public FileControllerTEST(FileServiceInt fileService) {

@@ -1,9 +1,9 @@
 package az.xazar.msminio.service.impl;
 
-import az.xazar.msminio.clinet.UserClientRest;
+import az.xazar.msminio.client.UserClientRest;
 import az.xazar.msminio.entity.UsersFileEntity;
 import az.xazar.msminio.model.MinioFileDto;
-import az.xazar.msminio.model.clinet.FileDto;
+import az.xazar.msminio.model.client.FileDto;
 import az.xazar.msminio.model.error.*;
 import az.xazar.msminio.repository.UserFileRepository;
 import az.xazar.msminio.service.FileService;
@@ -31,31 +31,21 @@ import static org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTE
 public class FileServiceImpl implements FileService {
     private final UserClientRest userClient;
     private final UserFileRepository userRepository;
-
     private final MinioServiceImpl minioServiceImpl;
-    private final MinioClient minioClient;
     private final IntFileUtil intFileUtil;
 
     private final String FILE_MEDIA_TYPE = "file";
-    private final String IMAGE_MEDIA_TYPE = "image";
 
-    @Value("${minio.image-folder}")
-    private String imageFolder;
     @Value("${minio.file-folder}")
     private String fileFolder;
-    @Value("${minio.bucket}")
-    private String bucketName;
-
 
     public FileServiceImpl(UserClientRest userClient,
                            UserFileRepository userRepository,
                            MinioServiceImpl minioServiceImpl,
-                           MinioClient minioClient,
                            IntFileUtil intFileUtil) {
         this.userClient = userClient;
         this.userRepository = userRepository;
         this.minioServiceImpl = minioServiceImpl;
-        this.minioClient = minioClient;
         this.intFileUtil = intFileUtil;
     }
 

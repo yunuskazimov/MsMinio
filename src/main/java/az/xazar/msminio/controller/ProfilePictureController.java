@@ -18,9 +18,6 @@ public class ProfilePictureController {
 
     private final ProfilePictureService pictureService;
 
-    @Value("${minio.image-folder}")
-    private String imageFolder;
-
     public ProfilePictureController(ProfilePictureService pictureService) {
         this.pictureService = pictureService;
     }

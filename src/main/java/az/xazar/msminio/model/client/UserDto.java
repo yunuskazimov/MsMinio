@@ -1,4 +1,4 @@
-package az.xazar.msminio.model.clinet;
+package az.xazar.msminio.model.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
