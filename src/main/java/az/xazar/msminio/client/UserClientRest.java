@@ -1,6 +1,6 @@
-package az.xazar.msminio.clinet;
+package az.xazar.msminio.client;
 
-import az.xazar.msminio.model.clinet.UserDto;
+import az.xazar.msminio.model.client.UserDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;

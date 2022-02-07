@@ -1,4 +1,4 @@
-package az.xazar.msminio.model.clinet;
+package az.xazar.msminio.model.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-//@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-//@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileDto {
-    //  private static final long serialVersionUID = 232836038145089522L;
-
     private Long id;
     private Long fileId;
     private String fileName;

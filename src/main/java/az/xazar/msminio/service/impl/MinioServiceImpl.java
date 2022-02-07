@@ -111,8 +111,13 @@ public class MinioServiceImpl implements MinioService {
     }
 
     private String getPreSignedUrl(String filename) {
-        return msSecure + "://" + msAdress + ":" + msPort + msControllerPath +
-                "/".concat(filename);
+        if(!msAdress.isEmpty()){
+            return msSecure + "://" + msAdress + ":" + msPort + msControllerPath +
+                    "/".concat(filename);
+        }else{
+            return msSecure + "://" + "188.166.133.164" + msControllerPath +
+                    "/".concat(filename);
+        }
     }
 
     @Transactional
