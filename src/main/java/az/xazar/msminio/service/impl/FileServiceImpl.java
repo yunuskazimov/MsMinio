@@ -53,11 +53,8 @@ public class FileServiceImpl implements FileService {
     public FileDto uploadFileWithFileDto(MultipartFile file, Long userId, String type) {
         log.info("uploadFile to User started with, {}",
                 kv("partnerId", userId));
-
         userClient.getById(userId);
-
         MinioFileDto minioFileDto = uploadMinioFileDto(file, userId);
-
         String fileName = minioFileDto.getFilename();
         String fileUrl = minioFileDto.getUrl();
 
@@ -85,14 +82,12 @@ public class FileServiceImpl implements FileService {
     public FileDto updateFileWithFileDto(Long id, Long userId, MultipartFile file, String type) {
         log.info("updateFile to User started with, {}",
                 kv("partnerId", userId));
-
         userClient.getById(userId);
         UsersFileEntity entity = userRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity Not Found"));
 
         if (!entity.isDeleted()) {
-
             intFileUtil.getFileExtensionIfAcceptable(file, FILE_MEDIA_TYPE);
             deleteFileById(id);
 
@@ -124,9 +119,7 @@ public class FileServiceImpl implements FileService {
 
         String fileName = getFileName(request);
         Long userId = getUserId(fileName);
-
         log.info("getFile started with {}", kv("fileName", fileName + ",userId: " + userId));
-
         checkFileIsDeletedAndGetEntity(fileName, userId);
 
         try {
@@ -144,10 +137,8 @@ public class FileServiceImpl implements FileService {
     @Transactional
     public String getFileUrl(HttpServletRequest request) {
         log.info("getFileUrl started with {}", kv("request", request));
-
         String fileName = getFileName(request);
         Long userId = getUserId(fileName);
-
         log.info("getFileUrl started with {}", kv("fileName", fileName + ",userId: " + userId));
         UsersFileEntity fileEntity = checkFileIsDeletedAndGetEntity(fileName, userId);
         try {
@@ -163,18 +154,14 @@ public class FileServiceImpl implements FileService {
 
     @Transactional
     public String deleteFileById(Long id) {
-
         log.info("deleteFileById started from User with {}", kv("id", id));
-
         UsersFileEntity usersFileEntity = userRepository.findById(id)
                 //  .filter(e -> !e.isDeleted())
                 .orElseThrow(() -> new EntityNotFoundException(UsersFileEntity.class, id));
 
         String fileName = usersFileEntity.getFileName();
         Long userId = getUserId(fileName);
-
         log.info("deleteFileById started from User with {}", kv("userId", userId));
-
         userClient.getById(userId);
 
         if (!usersFileEntity.isDeleted()) {
@@ -247,84 +234,9 @@ public class FileServiceImpl implements FileService {
     }
 
     @NotNull
-
     private Long getUserId(String fileName) {
         return Long.valueOf(fileName.split("[/]")[1].split("[i][i]")[0]);
     }
 
-
-//    @Override
-//    @Transactional
-//    public String uploadFileForUser(MultipartFile file, Long userId, String type) {
-//        log.info("uploadFileForUser started with, {}", kv("partnerId", userId));
-//
-//        userClient.getById(userId);
-//
-//        MinioFileDto minioFileDto = uploadMinioFileDto(file, userId);
-//
-//        String fileName = minioFileDto.getFilename();
-//        String fileUrl = minioFileDto.getUrl();
-//
-//        try {
-//            saveAndGetUserFileEntity(file, userId, type, fileName, fileUrl);
-//            log.info("uploadFileForUser completed with, {}", kv("partnerId", userId));
-//            return fileName;
-//        } catch (FileCantUploadException e) {
-//            throw new FileCantUploadException(file.getOriginalFilename());
-//        }
-//    }
-
-//    @Transactional
-//    public String updateFileForUser(Long id, Long userId, MultipartFile file, String type) {
-//        log.info("updateFile to User started with, {}",
-//                kv("partnerId", userId));
-//
-//        userClient.getById(userId);
-//        UsersFileEntity entity = userRepository.findById(id)
-//                .orElseThrow(() ->
-//                        new EntityNotFoundException("Entity Not Found"));
-//
-//        if (!entity.isDeleted()) {
-//
-//            intFileUtil.getFileExtensionIfAcceptable(file, FILE_MEDIA_TYPE);
-//            deleteFileById(id);
-//
-//            MinioFileDto minioFileDto = uploadMinioFileDto(file, userId);
-//
-//            String fileName = minioFileDto.getFilename();
-//            String fileUrl = minioFileDto.getUrl();
-//
-//            try {
-//                userRepository.save(UsersFileEntity.builder()
-//                        .id(entity.getId())
-//                        .userId(userId)
-//                        .fileUrl(fileUrl)
-//                        .originalName(file.getOriginalFilename())
-//                        .requestTypeName(type)
-//                        .fileName(fileName)
-//                        .isDeleted(false)
-//                        .build());
-//
-//                return fileName;
-//            } catch (FileCantUploadException e) {
-//                throw new FileCantUpdateException(file.getOriginalFilename());
-//            }
-//        }
-//        throw new FileCantUpdateException(file.getOriginalFilename());
-//    }
-
-//    private String getFileUrl(String path) {
-//        try {
-//            String url = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-//                    .bucket(bucketName)
-//                    .object(path).
-//                            method(Method.GET)
-//                    .expiry(7, TimeUnit.DAYS).build());
-//            return url;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "";
-//        }
-//    }
 }
 
